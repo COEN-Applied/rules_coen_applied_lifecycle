@@ -33,8 +33,8 @@ to make the workspace loadable by Bazel.
 - `bazel build //...` succeeds (will be a no-op until later tasks).
 
 ## Checkboxes
-- [ ] `MODULE.bazel` stub committed.
-- [ ] Root `BUILD.bazel` committed.
-- [ ] `.bazelversion`, `.bazelrc`, `.gitignore` committed.
-- [ ] `README.md`, `LICENSE`, `CHANGELOG.md` committed.
-- [ ] `bazel mod graph` verified.
+- [x] `MODULE.bazel` stub committed.
+- [x] Root `BUILD.bazel` committed.
+- [x] `.bazelversion`, `.bazelrc`, `.gitignore` committed.
+- [x] `README.md`, `LICENSE`, `CHANGELOG.md` committed.
+- [x] `bazel mod graph` verified.

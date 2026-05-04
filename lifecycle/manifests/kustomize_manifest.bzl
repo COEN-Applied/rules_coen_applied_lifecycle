@@ -27,7 +27,7 @@ load(
     "LifecycleManifestsInfo",
 )
 
-_KUSTOMIZE_TOOLCHAIN_TYPE = "@rules_kustomize//kustomize:toolchain_type"
+_KUSTOMIZE_TOOLCHAIN_TYPE = "@rules_kustomize//tools/kustomize:toolchain_type"
 
 def _stage_path_for(f):
     # Reproduce the file's workspace-relative path inside a staging
@@ -36,8 +36,8 @@ def _stage_path_for(f):
     return f.short_path
 
 def _kustomize_manifest_impl(ctx):
-    kustomize_info = ctx.toolchains[_KUSTOMIZE_TOOLCHAIN_TYPE].kustomize_info
-    kustomize_exe = kustomize_info.binary
+    kustomize_info = ctx.toolchains[_KUSTOMIZE_TOOLCHAIN_TYPE].kustomizeinfo
+    kustomize_exe = kustomize_info.tool
 
     overlay_kust = ctx.file.kustomization
 

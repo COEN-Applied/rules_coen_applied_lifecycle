@@ -30,6 +30,5 @@ bzl_library(
         ":split_manifest",
         "//lifecycle/environments:select_env",
         "//lifecycle/providers",
-        "@rules_helm//helm",
     ],
 )

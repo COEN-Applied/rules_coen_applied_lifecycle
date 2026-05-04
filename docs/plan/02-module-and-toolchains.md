@@ -37,11 +37,11 @@ Wire up the four ruleset dependencies at the versions mandated by the PRS.
   tolerance windows exist).
 
 ## Checkboxes
-- [ ] `bazel_dep(name="rules_oci", version="2.2.6")` added.
-- [ ] `bazel_dep(name="rules_pkg", version="1.1.0")` added.
-- [ ] `bazel_dep(name="rules_helm", version="0.22.1")` added.
-- [ ] `bazel_dep(name="rules_kustomize", version="0.5.3")` added.
-- [ ] `bazel_skylib` dep added.
-- [ ] `kustomize.download(version = "v5.8.0")` declared.
-- [ ] `MODULE.bazel.lock` committed.
-- [ ] `bazel mod graph` clean.
+- [x] `bazel_dep(name="rules_oci", version="2.2.6")` added.
+- [x] `bazel_dep(name="rules_pkg", version="1.1.0")` added.
+- [x] `bazel_dep(name="rules_helm", version="0.22.1")` added.
+- [x] `bazel_dep(name="rules_kustomize", version="0.5.3")` added.
+- [x] `bazel_skylib` dep added.
+- [x] `kustomize.download(version = "v5.8.0")` declared.
+- [x] `MODULE.bazel.lock` committed.
+- [x] `bazel mod graph` clean.

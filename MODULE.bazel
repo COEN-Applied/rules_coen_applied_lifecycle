@@ -8,7 +8,6 @@ deliberate release-bearing change and MUST accompany an entry in CHANGELOG.md
 module(
     name = "rules_farakov_lifecycle",
     version = "0.0.0",
-    compatibility_level = 1,
 )
 
 # --- Pinned toolchains (PRS §6) ------------------------------------------
@@ -20,29 +19,53 @@ bazel_dep(name = "rules_kustomize", version = "0.5.3")
 
 # --- Ancillary infrastructure (not consumer-visible) ---------------------
 
-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+# Required by our stardoc targets and the test workspace. The resolved
+# version comes from the graph (currently 1.9.0 via rules_python 1.7.0).
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
 
 # rules_python is used only to host the private image-rewriting helper
 # binary. Consumers are not expected to pull a Python toolchain themselves
 # just to use this ruleset; the binary runs under the hermetic interpreter
 # declared below.
-bazel_dep(name = "rules_python", version = "0.34.0")
+bazel_dep(name = "rules_python", version = "1.7.0")
 
 # --- Kustomize toolchain -------------------------------------------------
 #
-# NOTE: The exact version is bound to ruleset releases. Bumps require a
-# MINOR version bump of rules_farakov_lifecycle itself (see docs/versioning.md).
+# The toolchain binary is registered here so that all manifest-rendering
+# rules in this repo (and any consuming repo) resolve kustomize from the
+# same pinned version.
 
-kustomize = use_extension("@rules_kustomize//kustomize:extensions.bzl", "kustomize")
+kustomize = use_extension(
+    "@rules_kustomize//kustomize:extensions.bzl",
+    "kustomize",
+)
 kustomize.download(version = "v5.8.0")
-use_repo(kustomize, "kustomize_toolchains")
+use_repo(kustomize, "kustomize_tool", "kustomize_tool_toolchains")
 
-register_toolchains("@kustomize_toolchains//:all")
+register_toolchains(
+    "@kustomize_tool_toolchains//:darwin_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:darwin_amd64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:linux_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:linux_amd64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:windows_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:windows_amd64_v5.8.0_toolchain",
+)
 
 # --- Python toolchain (private use only) --------------------------------
+#
+# A single default Python 3.12 interpreter for hosting the py_binary
+# tools under lifecycle/private/. The generated toolchain is registered
+# so consumers do not need their own `rules_python` bootstrap just to
+# render manifests.
 
-python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python = use_extension(
+    "@rules_python//python/extensions:python.bzl",
+    "python",
+)
 python.toolchain(
     python_version = "3.12",
     is_default = True,
 )
+use_repo(python, "python_3_12", "python_3_12_host")
+
+register_toolchains("@python_3_12_host//:all")
