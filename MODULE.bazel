@@ -1,0 +1,48 @@
+"""Bzlmod module definition for rules_farakov_lifecycle.
+
+Dependency versions are pinned per the PRS. Bumping any pinned version is a
+deliberate release-bearing change and MUST accompany an entry in CHANGELOG.md
+(see docs/plan/13-ci-and-release.md).
+"""
+
+module(
+    name = "rules_farakov_lifecycle",
+    version = "0.0.0",
+    compatibility_level = 1,
+)
+
+# --- Pinned toolchains (PRS §6) ------------------------------------------
+
+bazel_dep(name = "rules_oci", version = "2.2.6")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_helm", version = "0.22.1")
+bazel_dep(name = "rules_kustomize", version = "0.5.3")
+
+# --- Ancillary infrastructure (not consumer-visible) ---------------------
+
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+
+# rules_python is used only to host the private image-rewriting helper
+# binary. Consumers are not expected to pull a Python toolchain themselves
+# just to use this ruleset; the binary runs under the hermetic interpreter
+# declared below.
+bazel_dep(name = "rules_python", version = "0.34.0")
+
+# --- Kustomize toolchain -------------------------------------------------
+#
+# NOTE: The exact version is bound to ruleset releases. Bumps require a
+# MINOR version bump of rules_farakov_lifecycle itself (see docs/versioning.md).
+
+kustomize = use_extension("@rules_kustomize//kustomize:extensions.bzl", "kustomize")
+kustomize.download(version = "v5.8.0")
+use_repo(kustomize, "kustomize_toolchains")
+
+register_toolchains("@kustomize_toolchains//:all")
+
+# --- Python toolchain (private use only) --------------------------------
+
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    python_version = "3.12",
+    is_default = True,
+)

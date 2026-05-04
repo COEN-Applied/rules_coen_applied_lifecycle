@@ -1,0 +1,23 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "layout",
+    srcs = ["layout.bzl"],
+    deps = [
+        "//lifecycle/providers",
+        "@rules_pkg//pkg:mappings_bzl",
+        "@rules_pkg//pkg:tar_bzl",
+    ],
+)
+
+bzl_library(
+    name = "push",
+    srcs = ["push.bzl"],
+    deps = [
+        ":layout",
+        "//lifecycle/providers",
+        "@rules_oci//oci",
+    ],
+)

@@ -1,0 +1,17 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+py_binary(
+    name = "rewrite_images",
+    srcs = ["rewrite_images.py"],
+    main = "rewrite_images.py",
+    python_version = "PY3",
+)
+
+py_binary(
+    name = "split_manifest",
+    srcs = ["split_manifest.py"],
+    main = "split_manifest.py",
+    python_version = "PY3",
+)

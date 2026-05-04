@@ -1,0 +1,19 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "defs",
+    srcs = ["defs.bzl"],
+    deps = [
+        "//lifecycle/environments:defs",
+        "//lifecycle/environments:select_env",
+        "//lifecycle/manifests:helm_manifest",
+        "//lifecycle/manifests:kustomize_manifest",
+        "//lifecycle/manifests:split_manifest",
+        "//lifecycle/oci:layout",
+        "//lifecycle/oci:push",
+        "//lifecycle/providers",
+        "//lifecycle/release:release_group",
+    ],
+)
