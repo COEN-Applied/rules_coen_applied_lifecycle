@@ -92,9 +92,9 @@ passes their generated flags).
 - Rule works with overlays placed at arbitrary repo paths (e.g., `deploy/kustomize/my-svc/prod/`).
 
 ## Checkboxes
-- [ ] `_kustomize_manifest` rule implemented.
-- [ ] Staging-dir logic handles sibling references (e.g., `../../base`).
-- [ ] Toolchain plumbing wired.
-- [ ] `kustomize_manifest` macro wrapper added.
-- [ ] `LifecycleManifestsInfo` returned with correct `source_package`.
-- [ ] No hardcoded env strings.
+- [x] `_kustomize_manifest` rule implemented.
+- [x] Staging-dir logic handles sibling references (e.g., `../../base`).
+- [x] Toolchain plumbing wired.
+- [x] `kustomize_manifest` macro wrapper added.
+- [x] `LifecycleManifestsInfo` returned with correct `source_package`.
+- [x] No hardcoded env strings.

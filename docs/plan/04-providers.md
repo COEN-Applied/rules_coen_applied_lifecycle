@@ -57,6 +57,6 @@ LifecyclePushInfo = provider(
 - No provider is defined twice in the ruleset.
 
 ## Checkboxes
-- [ ] `providers.bzl` written.
-- [ ] `BUILD.bazel` in the same dir exports a `bzl_library`.
-- [ ] Grep confirms zero duplicate `provider(` definitions for these names.
+- [x] `providers.bzl` written.
+- [x] `BUILD.bazel` in the same dir exports a `bzl_library`.
+- [x] Grep confirms zero duplicate `provider(` definitions for these names.

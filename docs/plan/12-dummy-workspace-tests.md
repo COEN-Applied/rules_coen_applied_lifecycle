@@ -69,9 +69,9 @@ Implemented as **`diff_test`** from `bazel_skylib` + a couple of custom
   corresponding diff_test to fail with a clean missing-flag error.
 
 ## Checkboxes
-- [ ] Dummy workspace scaffolded with `local_path_override`.
-- [ ] Non-canonical env names `["alpha","beta","gamma"]` wired up.
-- [ ] Three mock services exercising kustomize + helm + multi-prefix layouts.
-- [ ] Golden files committed.
-- [ ] `diff_test` + archive-layout tests green.
-- [ ] Release_group enumeration test green.
+- [x] Dummy workspace scaffolded with `local_path_override`.
+- [x] Non-canonical env names `["alpha","beta","gamma"]` wired up.
+- [x] Three mock services exercising kustomize + helm + multi-prefix layouts.
+- [x] Golden files committed.
+- [x] `diff_test` + archive-layout tests green.
+- [x] Release_group enumeration test green.

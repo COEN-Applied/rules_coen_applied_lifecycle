@@ -80,10 +80,10 @@ Exports only the `.bzl` files via `bzl_library` (skylib). No targets.
   fails analysis with a clear message.
 
 ## Checkboxes
-- [ ] `flags.bzl` rules + providers written.
-- [ ] `select_env.bzl` helper written.
-- [ ] `defs.bzl` factory macro written.
-- [ ] `BUILD.bazel` bzl_library targets declared.
-- [ ] Label references to the three flags are routed through a single
+- [x] `flags.bzl` rules + providers written.
+- [x] `select_env.bzl` helper written.
+- [x] `defs.bzl` factory macro written.
+- [x] `BUILD.bazel` bzl_library targets declared.
+- [x] Label references to the three flags are routed through a single
       module-level struct (no duplication in sibling files).
-- [ ] Manual smoke test with `environments = ["foo","bar"]` verified.
+- [x] Manual smoke test with `environments = ["foo","bar"]` verified.

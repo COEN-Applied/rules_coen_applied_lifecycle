@@ -1,0 +1,63 @@
+"""Bzlmod module for the rules_farakov_lifecycle dummy test workspace.
+
+This is a standalone Bazel workspace that consumes the local ruleset via
+local_path_override and exercises every public macro end-to-end.
+"""
+
+module(
+    name = "rules_farakov_lifecycle_tests",
+    version = "0.0.0",
+)
+
+local_path_override(
+    module_name = "rules_farakov_lifecycle",
+    path = "/Users/jacob/_development/_pave/20260504-workspace/rules_farakov_lifecycle",
+)
+
+bazel_dep(name = "rules_farakov_lifecycle", version = "0.0.0")
+bazel_dep(name = "rules_python", version = "1.7.0")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "rules_kustomize", version = "0.5.3")
+bazel_dep(name = "rules_helm", version = "0.22.1")
+bazel_dep(name = "rules_oci", version = "2.2.6")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+
+kustomize = use_extension(
+    "@rules_kustomize//kustomize:extensions.bzl",
+    "kustomize",
+)
+kustomize.download(version = "v5.8.0")
+use_repo(kustomize, "kustomize_tool", "kustomize_tool_toolchains")
+
+register_toolchains(
+    "@kustomize_tool_toolchains//:darwin_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:darwin_amd64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:linux_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:linux_amd64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:windows_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:windows_amd64_v5.8.0_toolchain",
+)
+
+python = use_extension(
+    "@rules_python//python/extensions:python.bzl",
+    "python",
+)
+python.toolchain(
+    python_version = "3.12",
+    is_default = True,
+)
+use_repo(python, "python_3_12", "python_3_12_host")
+
+register_toolchains("@python_3_12_host//:all")
+
+helm = use_extension(
+    "@rules_helm//helm:extensions.bzl",
+    "helm",
+)
+helm.toolchain(
+    name = "helm_toolchains",
+    version = "3.17.3",
+)
+use_repo(helm, "helm_toolchains")
+
+register_toolchains("@helm_toolchains//:all")

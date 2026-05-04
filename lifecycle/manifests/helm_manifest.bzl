@@ -150,13 +150,18 @@ def helm_manifest(
         values = base_values
 
     helm_output = name + ".rendered.yaml"
+    helm_opts = []
+    if release_name:
+        helm_opts.extend(["--release-name", release_name])
+    if namespace:
+        helm_opts.extend(["--namespace", namespace])
+
     helm_template(
         name = name + "_template",
         chart = chart,
         values = values,
-        output = helm_output,
-        release_name = release_name,
-        namespace = namespace,
+        out = helm_output,
+        opts = helm_opts,
         visibility = ["//visibility:private"],
     )
 

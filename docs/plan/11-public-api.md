@@ -65,7 +65,7 @@ Generate `docs/api.md` via `stardoc` for every `.bzl` file under
 - No private symbols (prefixed `_`) are re-exported from `defs.bzl`.
 
 ## Checkboxes
-- [ ] `lifecycle/defs.bzl` created.
+- [x] `lifecycle/defs.bzl` created.
 - [ ] `stardoc` wired into root `BUILD.bazel` (stardoc target only, not run
       at build time by default).
 - [ ] `docs/api.md` generated and committed.

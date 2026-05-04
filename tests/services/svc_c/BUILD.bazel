@@ -1,0 +1,39 @@
+load(
+    "@rules_farakov_lifecycle//lifecycle:defs.bzl",
+    "manifests_oci_layout",
+    "manifests_oci_push",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+manifests_oci_layout(
+    name = "svc_c_layout",
+    manifests = [
+        "//services/svc_c/regular:regular_manifest",
+        "//services/svc_c/special:special_manifest",
+    ],
+    layout = {
+        "*": "manifests",
+        "services/svc_c/special": "overrides",
+    },
+    dedup_strategy = "basename",
+    include_kustomization = False,
+)
+
+manifests_oci_push(
+    name = "svc_c",
+    manifests = [
+        "//services/svc_c/regular:regular_manifest",
+        "//services/svc_c/special:special_manifest",
+    ],
+    repository = "manifests/svc_c",
+    tag_flag = "//flags:image_tag",
+    registry_flag = "//flags:image_registry",
+    layout = {
+        "*": "manifests",
+        "services/svc_c/special": "overrides",
+    },
+    dedup_strategy = "basename",
+    include_kustomization = False,
+    component_name = "svc_c",
+)

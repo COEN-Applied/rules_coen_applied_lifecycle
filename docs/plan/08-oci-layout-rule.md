@@ -83,10 +83,10 @@ Thin wrapper that:
 - No hardcoded env strings.
 
 ## Checkboxes
-- [ ] `_manifests_tar` rule drafted.
-- [ ] `manifests_oci_layout` macro drafted.
-- [ ] Longest-prefix layout matching implemented.
-- [ ] `layout_callback` escape hatch validated.
-- [ ] Kustomization generation is optional and path-configurable.
-- [ ] Dedup strategies `package_basename` and `basename` both work.
-- [ ] No direct `tar` subprocess in the action graph.
+- [x] `_manifests_tar` rule drafted.
+- [x] `manifests_oci_layout` macro drafted.
+- [x] Longest-prefix layout matching implemented.
+- [x] `layout_callback` escape hatch validated.
+- [x] Kustomization generation is optional and path-configurable.
+- [x] Dedup strategies `package_basename` and `basename` both work.
+- [x] No direct `tar` subprocess in the action graph.

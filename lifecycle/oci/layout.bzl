@@ -121,11 +121,12 @@ def _layout_plan_impl(ctx):
     for dest in sorted(mapping.keys()):
         plan_lines.append("%s\t%s" % (mapping[dest].path, dest))
     plan_file = ctx.actions.declare_file(ctx.label.name + "_plan.tsv")
-    ctx.actions.write(plan_file, "\n".join(plan_lines) + ("\n" if plan_lines else ""))
 
     outputs = [plan_file]
 
     # Optionally generate a kustomization.yaml listing all resources.
+    kust_file = None
+    kust_dest = None
     if ctx.attr.include_kustomization:
         kprefix = ctx.attr.kustomization_prefix.strip("/")
         kust_dest = (kprefix + "/" if kprefix else "") + "kustomization.yaml"
@@ -148,13 +149,10 @@ def _layout_plan_impl(ctx):
         ctx.actions.write(kust_file, kust_content)
         outputs.append(kust_file)
 
-        # Append to the plan so pkg_tar picks it up.
         plan_lines.append("%s\t%s" % (kust_file.path, kust_dest))
-        # Overwrite plan file with appended line.
-        ctx.actions.write(
-            plan_file,
-            "\n".join(plan_lines) + "\n",
-        )
+
+    # Write the plan file once, after all entries (including kustomization) are collected.
+    ctx.actions.write(plan_file, "\n".join(plan_lines) + "\n")
 
     # Emit a simple provider with the list of (File, archive_path) pairs so
     # the wrapper macro can hand them to pkg_files/pkg_tar.
@@ -210,7 +208,7 @@ _layout_plan = rule(
 
 def _manifests_tar_impl(ctx):
     plan = ctx.attr.plan[_LayoutPlanInfo]
-    staging = ctx.actions.declare_directory(ctx.label.name + "_stage")
+    staging = ctx.actions.declare_directory(ctx.label.name)
 
     # One staging command per rule invocation. Emit a TSV and a single
     # portable shell one-liner; the only external tools are `mkdir` and

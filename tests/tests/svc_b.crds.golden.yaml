@@ -1,0 +1,25 @@
+# Source: svc-b/templates/all.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: foos.svc-b.example.com
+spec:
+  group: svc-b.example.com
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              name:
+                type: string
+  scope: Namespaced
+  names:
+    plural: foos
+    singular: foo
+    kind: Foo

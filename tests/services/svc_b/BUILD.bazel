@@ -1,0 +1,56 @@
+load("@rules_helm//helm:defs.bzl", "helm_package")
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load(
+    "@rules_farakov_lifecycle//lifecycle:defs.bzl",
+    "helm_manifest",
+    "manifests_oci_push",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+helm_package(
+    name = "svc_b_chart",
+    chart = "chart/Chart.yaml",
+    templates = ["chart/templates/all.yaml"],
+    values = "chart/values.yaml",
+)
+
+helm_manifest(
+    name = "svc_b",
+    chart = ":svc_b_chart",
+    env_flag = "//flags:environment",
+    tag_flag = "//flags:image_tag",
+    registry_flag = "//flags:image_registry",
+    image_refs = {
+        "original-registry/svc-b": "ghcr.io/testorg/svc-b",
+    },
+    split_crds = True,
+)
+
+manifests_oci_push(
+    name = "svc_b_push",
+    manifests = [":svc_b"],
+    repository = "manifests/svc_b",
+    tag_flag = "//flags:image_tag",
+    registry_flag = "//flags:image_registry",
+    flat = True,
+    component_name = "svc_b",
+)
+
+diff_test(
+    name = "svc_b_golden_test",
+    file1 = ":svc_b",
+    file2 = "//tests:svc_b.golden.yaml",
+)
+
+diff_test(
+    name = "svc_b_crds_golden_test",
+    file1 = ":svc_b.crds.yaml",
+    file2 = "//tests:svc_b.crds.golden.yaml",
+)
+
+diff_test(
+    name = "svc_b_workloads_golden_test",
+    file1 = ":svc_b.workloads.yaml",
+    file2 = "//tests:svc_b.workloads.golden.yaml",
+)

@@ -62,9 +62,9 @@ Step-by-step guide for the two reference repos. Includes a mapping table:
   mechanical.
 
 ## Checkboxes
-- [ ] `ci.yaml` added.
-- [ ] `release.yaml` added.
-- [ ] `CHANGELOG.md` populated for `v0.1.0`.
-- [ ] `versioning.md` written.
-- [ ] `migrating-from-monorepo.md` written.
+- [x] `ci.yaml` added.
+- [x] `release.yaml` added.
+- [x] `CHANGELOG.md` populated for `v0.1.0`.
+- [x] `versioning.md` written.
+- [x] `migrating-from-monorepo.md` written.
 - [ ] End-to-end release dry run executed against a staging tag.

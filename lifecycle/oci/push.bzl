@@ -79,11 +79,7 @@ _flag_value_file = rule(
 def _push_shim_impl(ctx):
     inner = ctx.attr.push
     return [
-        DefaultInfo(
-            files = inner[DefaultInfo].files,
-            runfiles = inner[DefaultInfo].default_runfiles,
-            executable = inner[DefaultInfo].files_to_run.executable,
-        ),
+        DefaultInfo(files = inner[DefaultInfo].files),
         LifecyclePushInfo(
             push_executable = inner[DefaultInfo].files_to_run.executable,
             push_label = ctx.attr.push.label,
@@ -99,7 +95,6 @@ _push_shim = rule(
         "component_name": attr.string(mandatory = True),
         "repository": attr.string(mandatory = True),
     },
-    executable = True,
 )
 
 # ------------------------------------------------------------------------

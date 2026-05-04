@@ -74,9 +74,9 @@ environment=<env>"]`. Keep this optional — it's a convenience, not core.
 - Duplicate-component detection catches a human error at analysis time.
 
 ## Checkboxes
-- [ ] `_release_group` rule implemented.
-- [ ] Launcher template committed.
-- [ ] Runfiles correctly populated so `bazel run` finds each child push.
-- [ ] `farakov_release_group` macro exposed.
-- [ ] `LifecycleReleaseGroupInfo` provider added to `providers.bzl`.
-- [ ] Duplicate detection verified.
+- [x] `_release_group` rule implemented.
+- [x] Launcher template committed.
+- [x] Runfiles correctly populated so `bazel run` finds each child push.
+- [x] `farakov_release_group` macro exposed.
+- [x] `LifecycleReleaseGroupInfo` provider added to `providers.bzl`.
+- [x] Duplicate detection verified.

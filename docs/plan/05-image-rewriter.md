@@ -78,9 +78,9 @@ rules_dict, registry, tag)`:
   produces `ghcr.io/acme/my-svc:v1`.
 
 ## Checkboxes
-- [ ] `rewrite_images.py` tool written with argv-in / argv-out I/O.
-- [ ] `py_binary` target declared in `lifecycle/private/BUILD.bazel`.
-- [ ] `image_rewrite.bzl` helper written.
-- [ ] Validation of `'` in rules implemented at analysis time.
-- [ ] Auto-qualification of bare repo DSTs implemented.
-- [ ] Manual smoke test with tag, digest, and bare-repo DSTs passes.
+- [x] `rewrite_images.py` tool written with argv-in / argv-out I/O.
+- [x] `py_binary` target declared in `lifecycle/private/BUILD.bazel`.
+- [x] `image_rewrite.bzl` helper written.
+- [x] Validation of `'` in rules implemented at analysis time.
+- [x] Auto-qualification of bare repo DSTs implemented.
+- [x] Manual smoke test with tag, digest, and bare-repo DSTs passes.

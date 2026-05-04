@@ -65,8 +65,8 @@ No bash.
 - No hardcoded env names.
 
 ## Checkboxes
-- [ ] `helm_manifest` macro written.
-- [ ] `split_manifest_by_kind` rule written (if `split_crds = True` callers
+- [x] `helm_manifest` macro written.
+- [x] `split_manifest_by_kind` rule written (if `split_crds = True` callers
       exist).
-- [ ] Returns or synthesises a target providing `LifecycleManifestsInfo`.
-- [ ] `env_flag` / `tag_flag` / `registry_flag` threaded through.
+- [x] Returns or synthesises a target providing `LifecycleManifestsInfo`.
+- [x] `env_flag` / `tag_flag` / `registry_flag` threaded through.

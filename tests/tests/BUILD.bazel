@@ -1,0 +1,85 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "svc_a_alpha.golden.yaml",
+    "svc_a_beta.golden.yaml",
+    "svc_a_gamma.golden.yaml",
+    "svc_b.golden.yaml",
+    "svc_b.crds.golden.yaml",
+    "svc_b.workloads.golden.yaml",
+])
+
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+
+sh_test(
+    name = "svc_a_image_rewrite_test",
+    srcs = ["image_rewrite_test.sh"],
+    data = ["//services/svc_a:svc_a_alpha"],
+    args = ["$(rootpath //services/svc_a:svc_a_alpha)"],
+)
+
+write_file(
+    name = "svc_a_layout_golden",
+    out = "svc_a_layout.golden.txt",
+    content = [
+        "kustomization.yaml",
+        "manifests/",
+        "manifests/svc_a_alpha.yaml",
+        "manifests/svc_a_beta.yaml",
+        "manifests/svc_a_gamma.yaml",
+        "",
+    ],
+    newline = "unix",
+)
+
+sh_test(
+    name = "svc_a_layout_test",
+    srcs = ["layout_test.sh"],
+    data = [
+        "//services/svc_a:svc_a_layout.tar",
+        ":svc_a_layout_golden",
+    ],
+    args = [
+        "$(rootpath //services/svc_a:svc_a_layout.tar)",
+        "$(rootpath :svc_a_layout_golden)",
+    ],
+)
+
+sh_test(
+    name = "svc_c_multi_prefix_layout_test",
+    srcs = ["layout_test.sh"],
+    data = [
+        "//services/svc_c:svc_c_layout.tar",
+        "//tests:svc_c_multi_prefix_golden.txt",
+    ],
+    args = [
+        "$(rootpath //services/svc_c:svc_c_layout.tar)",
+        "$(rootpath //tests:svc_c_multi_prefix_golden.txt)",
+    ],
+)
+
+write_file(
+    name = "svc_c_multi_prefix_golden",
+    out = "svc_c_multi_prefix_golden.txt",
+    content = [
+        "manifests/",
+        "manifests/svc_c_regular.yaml",
+        "overrides/",
+        "overrides/svc_c_special.yaml",
+        "",
+    ],
+    newline = "unix",
+)
+
+sh_test(
+    name = "release_group_enumeration_test",
+    srcs = ["release_group_enum_test.sh"],
+    data = ["//release:all_pushes"],
+    args = [
+        "$(rootpath //release:all_pushes)",
+        "svc_a",
+        "svc_b",
+        "svc_c",
+    ],
+)

@@ -1,0 +1,15 @@
+load(
+    "@rules_farakov_lifecycle//lifecycle:defs.bzl",
+    "farakov_release_group",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+farakov_release_group(
+    name = "all_pushes",
+    pushes = [
+        "//services/svc_a:svc_a.push",
+        "//services/svc_b:svc_b_push.push",
+        "//services/svc_c:svc_c.push",
+    ],
+)

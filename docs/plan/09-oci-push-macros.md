@@ -88,9 +88,9 @@ application_oci_push(
 - Multiple tags are supported.
 
 ## Checkboxes
-- [ ] `_flag_value_file` rule written.
-- [ ] `_push_alias` wrapper written (if required to emit `LifecyclePushInfo`).
-- [ ] `manifests_oci_push` macro written.
-- [ ] `application_oci_push` macro written.
-- [ ] `extra_tags` wiring verified.
-- [ ] `join_char` attribute honored in repository composition.
+- [x] `_flag_value_file` rule written.
+- [x] `_push_alias` wrapper written (if required to emit `LifecyclePushInfo`).
+- [x] `manifests_oci_push` macro written.
+- [x] `application_oci_push` macro written.
+- [x] `extra_tags` wiring verified.
+- [x] `join_char` attribute honored in repository composition.
