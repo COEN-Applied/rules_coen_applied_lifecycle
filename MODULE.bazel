@@ -7,7 +7,7 @@ deliberate release-bearing change and MUST accompany an entry in CHANGELOG.md
 
 module(
     name = "rules_farakov_lifecycle",
-    version = "0.1.0",
+    version = "0.1.1",
 )
 
 # --- Pinned toolchains ---------------------------------------------------
