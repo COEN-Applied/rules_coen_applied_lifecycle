@@ -83,3 +83,18 @@ sh_test(
         "svc_c",
     ],
 )
+
+# Regression test for the _push_shim runfiles-propagation bug: the
+# release_group target's runfiles tree must contain the transitive tool
+# dependencies (jq, crane) that each push invokes at runtime. Without
+# these, `bazel run` of the release_group fails with
+# `../aspect_bazel_lib.../jq: No such file or directory` even though the
+# individual pushes work standalone.
+sh_test(
+    name = "release_group_runfiles_test",
+    srcs = ["release_group_exec_test.sh"],
+    data = ["//release:all_pushes"],
+    args = [
+        "$(rootpath //release:all_pushes)",
+    ],
+)

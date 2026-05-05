@@ -688,7 +688,7 @@
     "@@rules_kustomize+//kustomize:extensions.bzl%kustomize": {
       "general": {
         "bzlTransitiveDigest": "BQHDNn9W/RXuDM78OZb3IkcD6AlqFilYn5o5zBfPRPE=",
-        "usagesDigest": "dyYSpT2EsyqLR6aGH64smQbENsc6NgBHUV5uK94OEr4=",
+        "usagesDigest": "+YixF+mcRQvN3rUOdH8nDEhAaQzATjh2IsaDp/rnE8g=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},

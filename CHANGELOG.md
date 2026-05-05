@@ -5,6 +5,20 @@ All notable changes to `rules_farakov_lifecycle` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- `_push_shim` (internal rule backing `<name>.push` targets from
+  `manifests_oci_push` / `application_oci_push`) now propagates the inner
+  `oci_push` target's `default_runfiles`. Without this, a
+  `farakov_release_group` whose launcher invokes each push by runfiles path
+  failed at runtime with
+  `../aspect_bazel_lib.../jq: No such file or directory` — the jq and crane
+  toolchain repos from `rules_oci` were not reachable from the release
+  group's runfiles tree, even though each push worked when invoked directly
+  via `bazel run //path:svc-push._raw_push`. Added
+  `//tests:release_group_runfiles_test` as a regression guard.
+
 ## [0.1.1] - 2026-05-05
 
 ### Changed
