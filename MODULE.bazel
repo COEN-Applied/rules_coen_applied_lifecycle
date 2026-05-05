@@ -1,16 +1,16 @@
 """Bzlmod module definition for rules_farakov_lifecycle.
 
-Dependency versions are pinned per the PRS. Bumping any pinned version is a
+Dependency versions are pinned. Bumping any pinned version is a
 deliberate release-bearing change and MUST accompany an entry in CHANGELOG.md
-(see docs/plan/13-ci-and-release.md).
+(see docs/versioning.md).
 """
 
 module(
     name = "rules_farakov_lifecycle",
-    version = "0.0.0",
+    version = "0.1.0",
 )
 
-# --- Pinned toolchains (PRS §6) ------------------------------------------
+# --- Pinned toolchains ---------------------------------------------------
 
 bazel_dep(name = "rules_oci", version = "2.2.6")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
@@ -63,8 +63,8 @@ python = use_extension(
     "python",
 )
 python.toolchain(
-    python_version = "3.12",
     is_default = True,
+    python_version = "3.12",
 )
 use_repo(python, "python_3_12", "python_3_12_host")
 

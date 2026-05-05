@@ -25,9 +25,9 @@ deployment environments.
 
 ## Getting started
 
-Work in progress. See `docs/plan/` for the implementation roadmap and
-`docs/ORIGINAL_PRS.md` for the full project specification.
+Work in progress. See `docs/` for documentation and
+`CHANGELOG.md` for the release history.
 
 ## License
 
-Apache-2.0 — see [LICENSE](./LICENSE).
+Proprietary – see [LICENSE](./LICENSE).
