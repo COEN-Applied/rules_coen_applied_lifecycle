@@ -85,14 +85,36 @@ _flag_value_file = rule(
 # ------------------------------------------------------------------------
 # _push_shim — re-export DefaultInfo + emit LifecyclePushInfo so the
 # release_group rule can aggregate push targets without string munging.
+#
+# The shim MUST propagate the inner push target's runfiles, not just its
+# files. Without runfiles, a release_group launcher that invokes the
+# inner push executable directly (by cd'ing into the release_group's
+# runfiles root) cannot resolve the inner push's transitive tool deps
+# (jq, crane, image dirs, tag/repo sidecar files). The symptom is a
+# runtime `No such file or directory` pointing at
+# `../aspect_bazel_lib.../jq` or the equivalent for crane.
+#
+# This rule is intentionally NOT marked `executable = True`. The shim is
+# only ever consumed by `farakov_release_group`, which reaches into its
+# `LifecyclePushInfo.push_executable` directly and uses the propagated
+# runfiles to stage tools. Making the shim itself executable would
+# require producing a symlink/wrapper to the inner executable (Bazel
+# requires an executable rule's `DefaultInfo.executable` to be a file
+# the rule itself declared), adding complexity for no user-visible
+# benefit — the inner `<name>._raw_push` target remains `bazel run`-able
+# on its own.
 # ------------------------------------------------------------------------
 
 def _push_shim_impl(ctx):
     inner = ctx.attr.push
+    inner_default = inner[DefaultInfo]
     return [
-        DefaultInfo(files = inner[DefaultInfo].files),
+        DefaultInfo(
+            files = inner_default.files,
+            runfiles = inner_default.default_runfiles,
+        ),
         LifecyclePushInfo(
-            push_executable = inner[DefaultInfo].files_to_run.executable,
+            push_executable = inner_default.files_to_run.executable,
             push_label = ctx.attr.push.label,
             component_name = ctx.attr.component_name,
             repository = ctx.attr.repository,
