@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The `rules_helm` toolchain (pinned to helm 3.17.3) is now registered by the
+  ruleset itself, matching the existing treatment of the kustomize and
+  rules_python toolchains. Consumer `MODULE.bazel` files no longer need to
+  declare `helm.toolchain(...)` + `register_toolchains("@helm_toolchains//:all")`
+  to use `helm_manifest`. Backwards-compatible: consumers that already register
+  their own helm toolchain keep working; Bazel's toolchain resolution picks the
+  first matching registration, so a consumer-side registration placed ahead of
+  the ruleset's module still wins.
+
+### Removed
+- The "Forgetting to register the `rules_helm` toolchain in the consuming
+  workspace" entry under common pitfalls in `docs/migrating-from-monorepo.md`,
+  now that consumers don't need to register it.
+
 ## [0.1.0] - 2026-05-04
 
 ### Added

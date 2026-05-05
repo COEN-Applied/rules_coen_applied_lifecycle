@@ -74,12 +74,16 @@ a monorepo onto their domain-agnostic counterparts in
   attribute** — wrap them in a `filegroup` so the attribute's
   `providers = [[LifecycleManifestsInfo], [DefaultInfo]]` constraint is
   satisfied.
-- **Forgetting to register the `rules_helm` toolchain in the consuming
-  workspace** — the ruleset does not register it on your behalf; your
-  `MODULE.bazel` must declare `helm.toolchain(name = "helm_toolchains", ...)` +
-  `register_toolchains(...)`.
 - **Relying on `select_env({"dev": …}, default = X)` defaulting to `X`
   when the env flag is `prod`** — not how this version works. The new
   helper emits `//conditions:default` only if you explicitly pass
   `default = …`. Selecting an env that's not in the mapping is a hard
   failure.
+
+## Overriding pinned toolchains
+
+The ruleset registers pinned `kustomize`, `helm`, and `rules_python`
+toolchains on consumers' behalf (see `MODULE.bazel` for exact versions).
+A consumer that needs a different version can register their own
+toolchain earlier in their `MODULE.bazel`; Bazel's toolchain resolution
+picks the first matching registration.

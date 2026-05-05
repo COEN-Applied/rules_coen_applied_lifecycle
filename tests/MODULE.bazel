@@ -50,14 +50,5 @@ use_repo(python, "python_3_12", "python_3_12_host")
 
 register_toolchains("@python_3_12_host//:all")
 
-helm = use_extension(
-    "@rules_helm//helm:extensions.bzl",
-    "helm",
-)
-helm.toolchain(
-    name = "helm_toolchains",
-    version = "3.17.3",
-)
-use_repo(helm, "helm_toolchains")
-
-register_toolchains("@helm_toolchains//:all")
+# The helm toolchain is registered by rules_farakov_lifecycle itself
+# (see its MODULE.bazel). No consumer-side registration needed.
