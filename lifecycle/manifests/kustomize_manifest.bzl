@@ -11,7 +11,7 @@ Design notes vs. the reference `k8s_service_manifest`:
     `use_default_shell_env`.
   * Environment flag labels are passed in explicitly. The ruleset has no
     default like `//build_flags:pipeline` — that kind of label baked in
-    was the entire category of coupling the PRS instructs us to remove.
+    was the entire category of coupling this ruleset is designed to avoid.
   * Optional image rewriting is composed via image_rewrite.bzl so all
     manifest rules share the same rewriter plumbing.
 """

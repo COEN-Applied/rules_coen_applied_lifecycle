@@ -7,7 +7,7 @@ sufficient for both the "fleet bundle" mode (one archive containing every
 service under `/manifests/<pkg>/...`) and the "flat per-service" mode
 (archive contains `/manifests/*.yaml` with basename-only dedup).
 
-Key decoupling points (PRS §3):
+Key decoupling points:
 
   * Archive layout is a `dict[str, str]` from *source package prefix* to
     *archive path prefix*. There is NO hardcoded `/manifests/` prefix.

@@ -1,7 +1,7 @@
-# Migrating from `pave-infra-monorepo` / `pave-monorepo`
+# Migrating from a monorepo
 
-This guide maps the domain-specific Bazel primitives historically used in
-the reference monorepos onto their domain-agnostic counterparts in
+This guide maps domain-specific Bazel primitives historically used in
+a monorepo onto their domain-agnostic counterparts in
 `rules_farakov_lifecycle`.
 
 ## Symbol mapping
