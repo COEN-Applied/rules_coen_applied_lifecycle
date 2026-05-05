@@ -11,7 +11,7 @@ module(
 
 local_path_override(
     module_name = "rules_farakov_lifecycle",
-    path = "/Users/jacob/_development/_pave/20260504-workspace/rules_farakov_lifecycle",
+    path = "..",
 )
 
 bazel_dep(name = "rules_farakov_lifecycle", version = "0.0.0")
@@ -43,8 +43,8 @@ python = use_extension(
     "python",
 )
 python.toolchain(
-    python_version = "3.12",
     is_default = True,
+    python_version = "3.12",
 )
 use_repo(python, "python_3_12", "python_3_12_host")
 
