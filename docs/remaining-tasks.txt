@@ -1,0 +1,3 @@
+Known remaining gaps (non-blocking)
+- docs/plan/11-public-api.md: stardoc target + generated docs/api.md still deferred (the plan README was already marked "partial (stardoc deferred)").
+- docs/plan/13-ci-and-release.md: end-to-end release dry-run requires pushing an actual v* tag — tracked but untouched.

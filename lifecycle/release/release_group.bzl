@@ -48,16 +48,29 @@ def _release_group_impl(ctx):
     invocations = []
     for p in pushes:
         exe = p.push_executable
-        # short_path is the runfiles-relative path; that's what a
-        # bazel-run sh_binary-style wrapper resolves to at runtime.
+        # exe.short_path is the runfiles-relative path. The launcher
+        # template cd's into the runfiles root before executing
+        # invocations, so the relative path resolves hermetically.
+        #
+        # The Starlark strings below are written verbatim into the shell
+        # script (no `% ()` formatting). That means `%s` in a Starlark
+        # string is a single `%s` in the shell script, which `printf`
+        # treats as a conversion specifier. We use `.format()` (not `%`)
+        # to substitute the Starlark-side values so the shell-side `%s`
+        # remains untouched.
         invocations.append(
             "\n".join([
-                "printf 'release_group: %s -> %s (tag=%%s)\\n' \"$EXTRA_ARGS\"" % (
-                    p.component_name,
-                    p.repository,
+                # Announce the component we're about to push.
+                "printf 'release_group: {component} -> {repo}\\n'".format(
+                    component = p.component_name,
+                    repo = p.repository,
                 ),
-                "if ! %s $EXTRA_ARGS; then" % _escape_shell(exe.short_path),
-                "    failed_components=\"$failed_components %s\"" % p.component_name,
+                # Echo any forwarded extra args on a separate line.
+                'if [ -n "$EXTRA_ARGS" ]; then printf \'  extra args: %s\\n\' "$EXTRA_ARGS"; fi',
+                "if ! {exe} $EXTRA_ARGS; then".format(exe = _escape_shell(exe.short_path)),
+                '    failed_components="$failed_components {component}"'.format(
+                    component = p.component_name,
+                ),
                 "fi",
             ]),
         )

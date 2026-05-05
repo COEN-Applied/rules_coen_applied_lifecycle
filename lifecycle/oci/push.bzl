@@ -29,9 +29,11 @@ load(
 
 # ------------------------------------------------------------------------
 # _flag_value_file — materialize a flag into a single-line file.
+# Also used to compose registry+suffix and (primary-tag + extra-tags)
+# sources without spawning a shell action.
 # ------------------------------------------------------------------------
 
-_VALID_SOURCES = ["tag", "registry", "registry_slash_suffix"]
+_VALID_SOURCES = ["tag", "registry", "registry_slash_suffix", "tags_list"]
 
 def _flag_value_file_impl(ctx):
     source = ctx.attr.source
@@ -50,11 +52,18 @@ def _flag_value_file_impl(ctx):
             fail("_flag_value_file(source='registry_slash_suffix') requires suffix.")
         registry = ctx.attr.registry_flag[LifecycleImageRegistryInfo].registry
         value = "%s%s%s" % (registry, ctx.attr.join_char, ctx.attr.suffix)
+    elif source == "tags_list":
+        if not ctx.attr.tag_flag:
+            fail("_flag_value_file(source='tags_list') requires tag_flag.")
+        primary = ctx.attr.tag_flag[LifecycleImageTagInfo].tag
+        all_tags = [primary] + list(ctx.attr.extra_tags)
+        # crane tag reads one tag per line; trailing newline is idiomatic
+        # here (not required by crane, but matches upstream examples).
+        value = "\n".join(all_tags) + "\n"
     else:
         fail("_flag_value_file: invalid source=%r (valid: %s)" % (source, _VALID_SOURCES))
 
     out = ctx.actions.declare_file(ctx.label.name)
-    # rules_oci's oci_push reads these files as-is; no trailing newline.
     ctx.actions.write(out, value)
     return [DefaultInfo(files = depset([out]))]
 
@@ -64,11 +73,13 @@ _flag_value_file = rule(
         "source": attr.string(mandatory = True, values = _VALID_SOURCES),
         "suffix": attr.string(),
         "join_char": attr.string(default = "/"),
+        "extra_tags": attr.string_list(),
         "tag_flag": attr.label(providers = [LifecycleImageTagInfo]),
         "registry_flag": attr.label(providers = [LifecycleImageRegistryInfo]),
     },
-    doc = "Emit a single-line file containing a flag value. Replaces the " +
-          "reference repos' duplicated _repository_file / _tag_file.",
+    doc = "Emit a single-line (or multi-line, for tag lists) file carrying " +
+          "flag-derived content. Replaces the reference repos' duplicated " +
+          "_repository_file / _tag_file rules.",
 )
 
 # ------------------------------------------------------------------------
@@ -98,6 +109,55 @@ _push_shim = rule(
 )
 
 # ------------------------------------------------------------------------
+# Shared wiring between manifests_oci_push and application_oci_push.
+# Both macros end with the same sequence:
+#   <name>.repo    — repository_file for oci_push
+#   <name>.tag     — remote_tags file (primary + any extras)
+#   <name>._raw_push — rules_oci's oci_push
+#   <name>.push    — _push_shim exposing LifecyclePushInfo
+# ------------------------------------------------------------------------
+
+def _wire_flag_driven_push(
+        name,
+        image,
+        repository,
+        tag_flag,
+        registry_flag,
+        extra_tags,
+        registry_join_char,
+        component_name,
+        visibility):
+    _flag_value_file(
+        name = name + ".repo",
+        source = "registry_slash_suffix",
+        registry_flag = registry_flag,
+        suffix = repository,
+        join_char = registry_join_char,
+        visibility = ["//visibility:private"],
+    )
+    _flag_value_file(
+        name = name + ".tag",
+        source = "tags_list",
+        tag_flag = tag_flag,
+        extra_tags = extra_tags,
+        visibility = ["//visibility:private"],
+    )
+    oci_push(
+        name = name + "._raw_push",
+        image = image,
+        repository_file = ":" + name + ".repo",
+        remote_tags = ":" + name + ".tag",
+        visibility = ["//visibility:private"],
+    )
+    _push_shim(
+        name = name + ".push",
+        push = ":" + name + "._raw_push",
+        component_name = component_name or name,
+        repository = repository,
+        visibility = visibility,
+    )
+
+# ------------------------------------------------------------------------
 # manifests_oci_push — data-image + push wrapper around a layout tar.
 # ------------------------------------------------------------------------
 
@@ -114,6 +174,7 @@ def manifests_oci_push(
         kustomization_api_version = "kustomize.config.k8s.io/v1beta1",
         kustomization_prefix = "",
         component_name = None,
+        extra_tags = [],
         registry_join_char = "/",
         os = "linux",
         architecture = "amd64",
@@ -138,12 +199,15 @@ def manifests_oci_push(
         `manifests_oci_layout`.
       component_name: Logical component name for release aggregation.
         Defaults to `name`.
+      extra_tags: `list[str]` of additional static tags applied in
+        addition to the flag-driven primary tag. Typical uses: `"latest"`,
+        a promotion alias like `"stable"`, etc.
       registry_join_char: Character between registry and repository.
         Default `"/"`; rare registries that disallow sub-paths may want
         `"-"` or similar.
-      os, architecture: Platform for the data-only image. Defaults to
-        linux/amd64 because manifests don't run anywhere; the actual
-        image payload is arch-agnostic.
+      os, architecture: Platform stamped into the data-only image
+        manifest. Defaults to `linux`/`amd64`; manifests are
+        arch-agnostic so the choice is mostly cosmetic.
       visibility: Standard Bazel visibility.
     """
     manifests_oci_layout(
@@ -166,35 +230,15 @@ def manifests_oci_push(
         visibility = visibility,
     )
 
-    _flag_value_file(
-        name = name + ".repo",
-        source = "registry_slash_suffix",
-        registry_flag = registry_flag,
-        suffix = repository,
-        join_char = registry_join_char,
-        visibility = ["//visibility:private"],
-    )
-
-    _flag_value_file(
-        name = name + ".tag",
-        source = "tag",
-        tag_flag = tag_flag,
-        visibility = ["//visibility:private"],
-    )
-
-    oci_push(
-        name = name + "._raw_push",
+    _wire_flag_driven_push(
+        name = name,
         image = ":" + name,
-        repository_file = ":" + name + ".repo",
-        remote_tags = ":" + name + ".tag",
-        visibility = ["//visibility:private"],
-    )
-
-    _push_shim(
-        name = name + ".push",
-        push = ":" + name + "._raw_push",
-        component_name = component_name or name,
         repository = repository,
+        tag_flag = tag_flag,
+        registry_flag = registry_flag,
+        extra_tags = extra_tags,
+        registry_join_char = registry_join_char,
+        component_name = component_name,
         visibility = visibility,
     )
 
@@ -209,6 +253,7 @@ def application_oci_push(
         tag_flag,
         registry_flag,
         component_name = None,
+        extra_tags = [],
         registry_join_char = "/",
         visibility = None):
     """Expose `bazel run`-able push for an existing oci_image / oci_image_index.
@@ -220,34 +265,19 @@ def application_oci_push(
       tag_flag: Label of the lifecycle_image_tag flag.
       registry_flag: Label of the lifecycle_image_registry flag.
       component_name: Logical component name for release aggregation.
+      extra_tags: `list[str]` of additional static tags. See
+        manifests_oci_push.
       registry_join_char: See manifests_oci_push.
       visibility: Standard Bazel visibility.
     """
-    _flag_value_file(
-        name = name + ".repo",
-        source = "registry_slash_suffix",
-        registry_flag = registry_flag,
-        suffix = repository,
-        join_char = registry_join_char,
-        visibility = ["//visibility:private"],
-    )
-    _flag_value_file(
-        name = name + ".tag",
-        source = "tag",
-        tag_flag = tag_flag,
-        visibility = ["//visibility:private"],
-    )
-    oci_push(
-        name = name + "._raw_push",
+    _wire_flag_driven_push(
+        name = name,
         image = image,
-        repository_file = ":" + name + ".repo",
-        remote_tags = ":" + name + ".tag",
-        visibility = ["//visibility:private"],
-    )
-    _push_shim(
-        name = name + ".push",
-        push = ":" + name + "._raw_push",
-        component_name = component_name or name,
         repository = repository,
+        tag_flag = tag_flag,
+        registry_flag = registry_flag,
+        extra_tags = extra_tags,
+        registry_join_char = registry_join_char,
+        component_name = component_name,
         visibility = visibility,
     )

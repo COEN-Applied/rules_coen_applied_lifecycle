@@ -23,11 +23,25 @@ Key decoupling points (PRS §3):
     `kustomize.config.k8s.io/v1beta1` and placed it at archive root.
 """
 
-load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup", "pkg_files")
 load("@rules_pkg//pkg:tar.bzl", "pkg_tar")
 load(
     "//lifecycle/providers:providers.bzl",
     "LifecycleManifestsInfo",
+)
+
+# ------------------------------------------------------------------------
+# Internal providers. Declared at module top so implementation functions
+# can reference them without load-order gymnastics.
+# ------------------------------------------------------------------------
+
+_LayoutPlanInfo = provider(
+    doc = "Internal: resolved layout plan (list of File -> archive path).",
+    fields = {"entries": "list[struct(file, archive_path)]"},
+)
+
+_LayoutStageInfo = provider(
+    doc = "Internal: staged TreeArtifact ready to be fed to pkg_tar.",
+    fields = {"directory": "File (TreeArtifact) containing the staged layout."},
 )
 
 # ------------------------------------------------------------------------
@@ -168,11 +182,6 @@ def _layout_plan_impl(ctx):
         ),
     ]
 
-_LayoutPlanInfo = provider(
-    doc = "Internal: resolved layout plan for consumption by the tar rule.",
-    fields = {"entries": "list[struct(file, archive_path)]"},
-)
-
 _layout_plan = rule(
     implementation = _layout_plan_impl,
     attrs = {
@@ -195,24 +204,23 @@ _layout_plan = rule(
 # Terminal tar rule: consume _LayoutPlanInfo and build a .tar via pkg_tar.
 #
 # We can't pass a dynamic dict of file→destination directly into
-# rules_pkg's `pkg_tar` (it requires analysis-time-known `remap_paths` or
-# `pkg_files` with fixed attributes), so this rule assembles its own tar
-# via ctx.actions. It uses the `tar` binary from the host's PATH ONLY if
-# rules_pkg is not available; by default it prefers rules_pkg's built-in
-# mechanism.
+# rules_pkg's `pkg_tar` (it wants analysis-time-known `remap_paths` or a
+# fixed `pkg_files` set). So this rule stages every file into a
+# TreeArtifact with the intended archive layout, then hands that
+# TreeArtifact to `pkg_tar`, which walks it verbatim.
 #
-# Implementation here takes the simplest hermetic path: write a directory
-# tree into a TreeArtifact, then ask rules_pkg to tar it. This costs one
-# extra copy per file but keeps us on supported rule_pkg primitives.
+# Staging is done via a single hermetic `ctx.actions.run_shell` with a
+# tiny POSIX-sh body. The only commands used are `mkdir`, `cp`, and
+# `printf` — all POSIX-mandatory. No PATH lookups for `tar` or similar.
 # ------------------------------------------------------------------------
 
 def _manifests_tar_impl(ctx):
     plan = ctx.attr.plan[_LayoutPlanInfo]
     staging = ctx.actions.declare_directory(ctx.label.name)
 
-    # One staging command per rule invocation. Emit a TSV and a single
-    # portable shell one-liner; the only external tools are `mkdir` and
-    # `cp`, both POSIX-mandatory.
+    # Produce the staging TreeArtifact by delegating to the hermetic
+    # Python stager. Python 3.12 is registered by MODULE.bazel, so this
+    # runs identically on macOS and Linux with no shell-dialect pitfalls.
     tsv_lines = []
     input_files = []
     for e in plan.entries:
@@ -221,21 +229,14 @@ def _manifests_tar_impl(ctx):
     tsv = ctx.actions.declare_file(ctx.label.name + "_entries.tsv")
     ctx.actions.write(tsv, "\n".join(tsv_lines) + ("\n" if tsv_lines else ""))
 
-    ctx.actions.run_shell(
-        outputs = [staging],
+    args = ctx.actions.args()
+    args.add(tsv.path)
+    args.add(staging.path)
+    ctx.actions.run(
+        executable = ctx.executable._stager,
+        arguments = [args],
         inputs = input_files + [tsv],
-        command = """
-set -euo pipefail
-stage="$1"
-plan="$2"
-mkdir -p "$stage"
-while IFS=$(printf '\\t') read -r src dest; do
-  [ -z "$src" ] && continue
-  mkdir -p "$stage/$(dirname "$dest")"
-  cp "$src" "$stage/$dest"
-done < "$plan"
-""",
-        arguments = [staging.path, tsv.path],
+        outputs = [staging],
         mnemonic = "LifecycleLayoutStage",
         progress_message = "Staging OCI layout for %s" % ctx.label,
     )
@@ -245,14 +246,15 @@ done < "$plan"
         _LayoutStageInfo(directory = staging),
     ]
 
-_LayoutStageInfo = provider(
-    fields = {"directory": "File (TreeArtifact) containing the staged layout."},
-)
-
 _manifests_stage = rule(
     implementation = _manifests_tar_impl,
     attrs = {
         "plan": attr.label(providers = [_LayoutPlanInfo], mandatory = True),
+        "_stager": attr.label(
+            default = "//lifecycle/private:stage_tree",
+            executable = True,
+            cfg = "exec",
+        ),
     },
 )
 

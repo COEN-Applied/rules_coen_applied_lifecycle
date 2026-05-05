@@ -42,7 +42,8 @@ def _kustomize_manifest_impl(ctx):
     overlay_kust = ctx.file.kustomization
 
     # Stage every source file into a single TreeArtifact so kustomize sees
-    # a coherent filesystem with sibling paths intact.
+    # a coherent filesystem with sibling paths (relative refs like
+    # `../../base/` resolve the same way they would in source).
     staging = ctx.actions.declare_directory(ctx.label.name + "_staging")
 
     all_sources = (
@@ -51,10 +52,11 @@ def _kustomize_manifest_impl(ctx):
         [overlay_kust]
     )
 
-    # Build a newline-delimited "src<TAB>dest" manifest consumed by a
-    # staging helper. Implemented here as a single `ctx.actions.run_shell`
-    # with a tiny, portable POSIX-sh body. This is the only shell snippet
-    # in the ruleset and it does NOT depend on any tool outside coreutils.
+    # Build a `<src_path>\t<dest_rel>` TSV and hand it + the staging dir
+    # to the hermetic Python stager. Previously this was a `run_shell`
+    # block, but /bin/sh's `IFS=$(printf '\t')` and `set -euo pipefail`
+    # behaviours vary between dash (Debian/Ubuntu default sh) and bash
+    # (macOS's default sh). The Python tool avoids that variance.
     staging_plan = ctx.actions.declare_file(ctx.label.name + "_staging_plan.txt")
     plan_lines = []
     seen = {}
@@ -66,38 +68,34 @@ def _kustomize_manifest_impl(ctx):
         plan_lines.append("%s\t%s" % (f.path, rel))
     ctx.actions.write(staging_plan, "\n".join(plan_lines) + "\n")
 
-    # Stage files into the TreeArtifact.
-    ctx.actions.run_shell(
-        outputs = [staging],
+    stage_args = ctx.actions.args()
+    stage_args.add(staging_plan.path)
+    stage_args.add(staging.path)
+    ctx.actions.run(
+        executable = ctx.executable._stager,
+        arguments = [stage_args],
         inputs = all_sources + [staging_plan],
-        command = """
-set -euo pipefail
-out="$1"
-plan="$2"
-mkdir -p "$out"
-while IFS=$(printf '\\t') read -r src dest; do
-  [ -z "$src" ] && continue
-  mkdir -p "$out/$(dirname "$dest")"
-  cp "$src" "$out/$dest"
-done < "$plan"
-""",
-        arguments = [staging.path, staging_plan.path],
+        outputs = [staging],
         mnemonic = "LifecycleKustomizeStage",
         progress_message = "Staging kustomize sources for %s" % ctx.label,
     )
 
-    # Run kustomize against the staged overlay directory.
+    # Run kustomize against the staged overlay directory. One `run_shell`
+    # is unavoidable here because kustomize writes to stdout; we
+    # redirect to the declared output. `set -eu` (no pipefail, no
+    # bash-isms) works on every POSIX sh we target.
     raw_yaml = ctx.actions.declare_file(ctx.label.name + ".raw.yaml")
-    overlay_dir = _stage_path_for(overlay_kust).rsplit("/", 1)[0] if "/" in _stage_path_for(overlay_kust) else "."
+    overlay_short = _stage_path_for(overlay_kust)
+    overlay_dir = overlay_short.rsplit("/", 1)[0] if "/" in overlay_short else "."
 
     ctx.actions.run_shell(
         outputs = [raw_yaml],
         inputs = [staging],
         tools = [kustomize_exe],
-        command = """
-set -euo pipefail
-"$1" build --load-restrictor LoadRestrictionsNone "$2/$3" > "$4"
-""",
+        command = (
+            "set -eu\n" +
+            '"$1" build --load-restrictor LoadRestrictionsNone "$2/$3" > "$4"\n'
+        ),
         arguments = [kustomize_exe.path, staging.path, overlay_dir, raw_yaml.path],
         mnemonic = "LifecycleKustomizeBuild",
         progress_message = "kustomize build for %s" % ctx.label,
@@ -156,6 +154,11 @@ _kustomize_manifest = rule(
         "out": attr.output(
             doc = "Rendered (and optionally image-rewritten) YAML file. " +
                   "Defaults to `<name>.yaml` via the wrapper macro.",
+        ),
+        "_stager": attr.label(
+            default = "//lifecycle/private:stage_tree",
+            executable = True,
+            cfg = "exec",
         ),
     }.items() + IMAGE_REWRITE_ATTRS.items()),
     toolchains = [_KUSTOMIZE_TOOLCHAIN_TYPE],

@@ -8,104 +8,69 @@ load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 
 package(default_visibility = ["//visibility:public"])
 
+# Base + per-overlay filegroups. The base is shared across overlays;
+# each overlay exposes its own kustomization + patches.
 filegroup(
     name = "base_manifests",
     srcs = glob(["base/**/*.yaml"]),
 )
 
-filegroup(
-    name = "alpha_overlay",
-    srcs = glob(["overlays/alpha/**/*.yaml"]),
-)
+_OVERLAYS = ["alpha", "beta", "gamma"]
 
-filegroup(
-    name = "beta_overlay",
-    srcs = glob(["overlays/beta/**/*.yaml"]),
-)
-
-filegroup(
-    name = "gamma_overlay",
-    srcs = glob(["overlays/gamma/**/*.yaml"]),
-)
+[
+    filegroup(
+        name = "%s_overlay" % overlay,
+        srcs = glob(["overlays/%s/**/*.yaml" % overlay]),
+    )
+    for overlay in _OVERLAYS
+]
 
 _IMAGE_REFS = {
     "original-registry/svc-a": "ghcr.io/testorg/svc-a",
 }
 
-kustomize_manifest(
-    name = "svc_a_alpha",
-    kustomization = "overlays/alpha/kustomization.yaml",
-    base_manifests = [":base_manifests"],
-    overlay_manifests = [":alpha_overlay"],
-    image_refs = _IMAGE_REFS,
-    env_flag = "//flags:environment",
-    tag_flag = "//flags:image_tag",
-    registry_flag = "//flags:image_registry",
-    out = "svc_a_alpha.yaml",
-)
+# Render and diff-test one kustomize target per overlay. Exercises the
+# fact that `kustomize_manifest` doesn't bake any environment name into
+# its rule semantics: the ruleset accepts any overlay directory, the
+# test workspace chose `alpha/beta/gamma` to prove that domain-
+# specific `dev/staging/prod` has truly been eradicated.
+[
+    kustomize_manifest(
+        name = "svc_a_" + overlay,
+        kustomization = "overlays/{}/kustomization.yaml".format(overlay),
+        base_manifests = [":base_manifests"],
+        overlay_manifests = [":%s_overlay" % overlay],
+        image_refs = _IMAGE_REFS,
+        out = "svc_a_{}.yaml".format(overlay),
+        env_flag = "//flags:environment",
+        tag_flag = "//flags:image_tag",
+        registry_flag = "//flags:image_registry",
+    )
+    for overlay in _OVERLAYS
+]
 
-kustomize_manifest(
-    name = "svc_a_beta",
-    kustomization = "overlays/beta/kustomization.yaml",
-    base_manifests = [":base_manifests"],
-    overlay_manifests = [":beta_overlay"],
-    image_refs = _IMAGE_REFS,
-    env_flag = "//flags:environment",
-    tag_flag = "//flags:image_tag",
-    registry_flag = "//flags:image_registry",
-    out = "svc_a_beta.yaml",
-)
-
-kustomize_manifest(
-    name = "svc_a_gamma",
-    kustomization = "overlays/gamma/kustomization.yaml",
-    base_manifests = [":base_manifests"],
-    overlay_manifests = [":gamma_overlay"],
-    image_refs = _IMAGE_REFS,
-    env_flag = "//flags:environment",
-    tag_flag = "//flags:image_tag",
-    registry_flag = "//flags:image_registry",
-    out = "svc_a_gamma.yaml",
-)
+[
+    diff_test(
+        name = "svc_a_{}_golden_test".format(overlay),
+        file1 = ":svc_a_" + overlay,
+        file2 = "//tests:svc_a_{}.golden.yaml".format(overlay),
+    )
+    for overlay in _OVERLAYS
+]
 
 manifests_oci_layout(
     name = "svc_a_layout",
-    manifests = [
-        ":svc_a_alpha",
-        ":svc_a_beta",
-        ":svc_a_gamma",
-    ],
+    manifests = [":svc_a_" + overlay for overlay in _OVERLAYS],
     flat = True,
 )
 
 manifests_oci_push(
     name = "svc_a",
-    manifests = [
-        ":svc_a_alpha",
-        ":svc_a_beta",
-        ":svc_a_gamma",
-    ],
+    manifests = [":svc_a_" + overlay for overlay in _OVERLAYS],
     repository = "manifests/svc_a",
     tag_flag = "//flags:image_tag",
     registry_flag = "//flags:image_registry",
+    extra_tags = ["latest"],  # exercise extra_tags plumbing
     flat = True,
     component_name = "svc_a",
-)
-
-diff_test(
-    name = "svc_a_alpha_golden_test",
-    file1 = ":svc_a_alpha",
-    file2 = "//tests:svc_a_alpha.golden.yaml",
-)
-
-diff_test(
-    name = "svc_a_beta_golden_test",
-    file1 = ":svc_a_beta",
-    file2 = "//tests:svc_a_beta.golden.yaml",
-)
-
-diff_test(
-    name = "svc_a_gamma_golden_test",
-    file1 = ":svc_a_gamma",
-    file2 = "//tests:svc_a_gamma.golden.yaml",
 )

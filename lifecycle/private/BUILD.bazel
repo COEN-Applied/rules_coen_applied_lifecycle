@@ -15,3 +15,10 @@ py_binary(
     main = "split_manifest.py",
     python_version = "PY3",
 )
+
+py_binary(
+    name = "stage_tree",
+    srcs = ["stage_tree.py"],
+    main = "stage_tree.py",
+    python_version = "PY3",
+)

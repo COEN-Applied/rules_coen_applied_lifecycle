@@ -86,7 +86,12 @@ Thin wrapper that:
 - [x] `_manifests_tar` rule drafted.
 - [x] `manifests_oci_layout` macro drafted.
 - [x] Longest-prefix layout matching implemented.
-- [x] `layout_callback` escape hatch validated.
+- [ ] `layout_callback` escape hatch — **deferred**. The longest-prefix
+      `layout` dict has covered every real-world layout encountered during
+      PRS analysis + dummy-workspace tests. Adding a Python callback
+      would shift layout resolution out of the analysis graph, which
+      hurts caching and cquery-ability. Revisit if a consumer materially
+      needs it; the attribute name is reserved.
 - [x] Kustomization generation is optional and path-configurable.
 - [x] Dedup strategies `package_basename` and `basename` both work.
 - [x] No direct `tar` subprocess in the action graph.

@@ -8,7 +8,22 @@
 # Each push target below is a `bazel run`-able binary (typically
 # rules_oci's oci_push). Extra args after `--` are forwarded verbatim so
 # users can, for instance, pass `--insecure` to every push in one shot.
+#
+# Push executables are resolved against the Bazel runfiles directory so
+# this launcher works whether invoked via `bazel run` (which cd's to the
+# runfiles root) or a copied-out binary that sets RUNFILES_DIR
+# explicitly.
 set -eu
+
+# Resolve runfiles directory, then chdir into it so every push
+# executable's short_path resolves correctly.
+if [ -n "${RUNFILES_DIR:-}" ] && [ -d "$RUNFILES_DIR/_main" ]; then
+    cd "$RUNFILES_DIR/_main"
+elif [ -n "${TEST_SRCDIR:-}" ] && [ -d "$TEST_SRCDIR/_main" ]; then
+    cd "$TEST_SRCDIR/_main"
+elif [ -d "$0.runfiles/_main" ]; then
+    cd "$0.runfiles/_main"
+fi
 
 EXTRA_ARGS=""
 if [ "${1:-}" = "--" ]; then
@@ -24,3 +39,4 @@ if [ -n "$failed_components" ]; then
     printf 'release_group: failed components:%s\n' "$failed_components" >&2
     exit 1
 fi
+
