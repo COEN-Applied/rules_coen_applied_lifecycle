@@ -1,4 +1,4 @@
-"""`manifests_oci_layout` — build a `.tar` archive with a caller-configurable
+"""`manifests_oci_layout` — build a `.tar.gz` archive with a caller-configurable
 internal directory layout.
 
 Replaces the reference repos' two near-duplicate tar rules
@@ -6,6 +6,16 @@ Replaces the reference repos' two near-duplicate tar rules
 sufficient for both the "fleet bundle" mode (one archive containing every
 service under `/manifests/<pkg>/...`) and the "flat per-service" mode
 (archive contains `/manifests/*.yaml` with basename-only dedup).
+
+The output archive is gzip-compressed. This is required by downstream OCI
+artifact consumers — most notably Flux's `source-controller`, whose
+`OCIRepository` reconciler refuses to extract a layer whose body is not
+gzip-compressed (`failed to extract layer contents from artifact: requires
+gzip-compressed body: gzip: invalid header`). `@rules_oci`'s `oci_image`
+detects the layer compression by looking at the first two bytes of the
+input archive (`1f 8b` ⇒ gzip), so simply emitting a gzip-compressed
+`pkg_tar` is sufficient to make the produced layer's mediaType resolve to
+`application/vnd.oci.image.layer.v1.tar+gzip`.
 
 Key decoupling points:
 
@@ -274,10 +284,22 @@ def manifests_oci_layout(
         kustomization_api_version = "kustomize.config.k8s.io/v1beta1",
         kustomization_prefix = "",
         visibility = None):
-    """Assemble a `.tar` archive containing rendered manifests.
+    """Assemble a gzip-compressed tar archive containing rendered manifests.
+
+    The archive is gzip-compressed so that `@rules_oci`'s `oci_image`
+    descriptor synthesis tags the resulting layer's mediaType as
+    `application/vnd.oci.image.layer.v1.tar+gzip` (compression is detected
+    from the input file's first two bytes — `1f 8b` ⇒ gzip). This is
+    required by Flux's `source-controller`, whose `OCIRepository`
+    reconciler refuses to extract layers whose body is not gzip-compressed
+    (`failed to extract layer contents from artifact: requires
+    gzip-compressed body: gzip: invalid header`).
 
     Args:
-      name: Target name. Produces `<name>.tar`.
+      name: Target name. Produces a `pkg_tar` rule labeled `:<name>` whose
+        default output is `<name>.tar.gz`. Consumers (e.g.
+        `oci_image(tars = [...])`) reference the rule by label, so the
+        change in implicit output filename is invisible to them.
       manifests: `list[label]` of targets providing `LifecycleManifestsInfo`
         (preferred) or raw YAML files (fallback).
       layout: Optional `dict[str, str]` mapping source-package prefixes to
@@ -321,12 +343,18 @@ def manifests_oci_layout(
         visibility = ["//visibility:private"],
     )
 
-    # Final .tar via rules_pkg. pkg_tar accepts a TreeArtifact as a source
-    # and archives it verbatim.
+    # Final .tar.gz via rules_pkg. pkg_tar accepts a TreeArtifact as a
+    # source and archives it verbatim. `extension = "tar.gz"` causes
+    # rules_pkg to gzip-compress the archive (it auto-selects the
+    # compressor from the extension); the resulting layer is detected as
+    # gzip-compressed by `@rules_oci`'s descriptor.sh (gzip magic
+    # `1f 8b` at offset 0) and stamped with mediaType
+    # `application/vnd.oci.image.layer.v1.tar+gzip`, which is what Flux
+    # source-controller requires when pulling the artifact.
     pkg_tar(
         name = name,
         srcs = [":" + name + "_stage"],
         strip_prefix = name + "_stage",
-        extension = "tar",
+        extension = "tar.gz",
         visibility = visibility,
     )

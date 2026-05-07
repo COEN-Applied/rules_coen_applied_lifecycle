@@ -33,15 +33,21 @@ write_file(
     newline = "unix",
 )
 
+# Layout tar references the implicit pkg_tar output. Since the layout
+# rule now produces a gzip-compressed archive (extension = "tar.gz", see
+# lifecycle/oci/layout.bzl), the implicit output filename is
+# `<name>.tar.gz`. `tar tf` transparently reads gzip-compressed archives
+# on every supported tar (bsdtar / GNU tar), so layout_test.sh stays
+# unchanged.
 sh_test(
     name = "svc_a_layout_test",
     srcs = ["layout_test.sh"],
     data = [
-        "//services/svc_a:svc_a_layout.tar",
+        "//services/svc_a:svc_a_layout.tar.gz",
         ":svc_a_layout_golden",
     ],
     args = [
-        "$(rootpath //services/svc_a:svc_a_layout.tar)",
+        "$(rootpath //services/svc_a:svc_a_layout.tar.gz)",
         "$(rootpath :svc_a_layout_golden)",
     ],
 )
@@ -50,11 +56,11 @@ sh_test(
     name = "svc_c_multi_prefix_layout_test",
     srcs = ["layout_test.sh"],
     data = [
-        "//services/svc_c:svc_c_layout.tar",
+        "//services/svc_c:svc_c_layout.tar.gz",
         "//tests:svc_c_multi_prefix_golden.txt",
     ],
     args = [
-        "$(rootpath //services/svc_c:svc_c_layout.tar)",
+        "$(rootpath //services/svc_c:svc_c_layout.tar.gz)",
         "$(rootpath //tests:svc_c_multi_prefix_golden.txt)",
     ],
 )

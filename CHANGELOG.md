@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- `manifests_oci_layout` now produces a **gzip-compressed** tar archive
+  (`extension = "tar.gz"` instead of `"tar"`). Previously the rule emitted
+  a plain `application/vnd.oci.image.layer.v1.tar` layer; Flux's
+  `source-controller` `OCIRepository` reconciler refuses to extract such
+  layers and reports
+  `failed to extract layer contents from artifact: requires gzip-compressed
+  body: gzip: invalid header` for every artifact pushed via
+  `manifests_oci_push`. With the fix, `@rules_oci`'s descriptor synthesis
+  detects the gzip magic at offset 0 of the layer file and stamps the
+  layer's mediaType as `application/vnd.oci.image.layer.v1.tar+gzip`,
+  matching Flux's expectation. Test references that pointed at the
+  implicit pkg_tar output (`svc_*_layout.tar`) were updated to the new
+  filename (`svc_*_layout.tar.gz`); `tar tf` transparently reads
+  gzip-compressed archives, so the layout assertions are unchanged.
 - `_push_shim` (internal rule backing `<name>.push` targets from
   `manifests_oci_push` / `application_oci_push`) now propagates the inner
   `oci_push` target's `default_runfiles`. Without this, a
