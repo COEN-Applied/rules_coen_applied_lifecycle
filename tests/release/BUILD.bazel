@@ -1,0 +1,15 @@
+load(
+    "@rules_coen_applied_lifecycle//lifecycle:defs.bzl",
+    "coen_applied_release_group",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+coen_applied_release_group(
+    name = "all_pushes",
+    pushes = [
+        "//services/svc_a:svc_a.push",
+        "//services/svc_b:svc_b_push.push",
+        "//services/svc_c:svc_c.push",
+    ],
+)

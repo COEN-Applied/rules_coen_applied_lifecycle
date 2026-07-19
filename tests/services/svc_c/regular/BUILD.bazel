@@ -1,0 +1,6 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "regular_manifest",
+    srcs = ["svc_c_regular.yaml"],
+)

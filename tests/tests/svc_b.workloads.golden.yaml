@@ -1,0 +1,20 @@
+# Source: svc-b/templates/all.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name
+  labels:
+    app: release-name
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: release-name
+  template:
+    metadata:
+      labels:
+        app: release-name
+    spec:
+      containers:
+      - name: release-name
+        image: ghcr.io/testorg/svc-b:test-tag

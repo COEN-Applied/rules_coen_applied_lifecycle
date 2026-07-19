@@ -1,0 +1,34 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "image_rewrite",
+    srcs = ["image_rewrite.bzl"],
+    deps = ["//lifecycle/providers"],
+)
+
+bzl_library(
+    name = "kustomize_manifest",
+    srcs = ["kustomize_manifest.bzl"],
+    deps = [
+        ":image_rewrite",
+        "//lifecycle/providers",
+    ],
+)
+
+bzl_library(
+    name = "split_manifest",
+    srcs = ["split_manifest.bzl"],
+)
+
+bzl_library(
+    name = "helm_manifest",
+    srcs = ["helm_manifest.bzl"],
+    deps = [
+        ":image_rewrite",
+        ":split_manifest",
+        "//lifecycle/environments:select_env",
+        "//lifecycle/providers",
+    ],
+)

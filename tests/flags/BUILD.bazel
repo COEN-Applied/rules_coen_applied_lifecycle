@@ -1,0 +1,12 @@
+load(
+    "@rules_coen_applied_lifecycle//lifecycle:defs.bzl",
+    "coen_applied_lifecycle_environments",
+)
+
+coen_applied_lifecycle_environments(
+    environments = ["alpha", "beta", "gamma"],
+    default_environment = "alpha",
+    default_image_tag = "test-tag",
+    default_image_registry = "ghcr.io/testorg",
+    visibility = ["//visibility:public"],
+)

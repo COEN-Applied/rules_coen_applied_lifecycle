@@ -1,0 +1,4 @@
+replicaCount: 2
+image:
+  repository: original-registry/svc-b
+  tag: placeholder

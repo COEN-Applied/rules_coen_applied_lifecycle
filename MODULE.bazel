@@ -1,0 +1,98 @@
+"""Bzlmod module definition for rules_coen_applied_lifecycle.
+
+Dependency versions are pinned. Bumping any pinned version is a
+deliberate release-bearing change and MUST accompany an entry in CHANGELOG.md
+(see docs/versioning.md).
+"""
+
+module(
+    name = "rules_coen_applied_lifecycle",
+    version = "0.1.2",
+)
+
+# --- Pinned toolchains ---------------------------------------------------
+
+bazel_dep(name = "rules_oci", version = "2.2.6")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_helm", version = "0.22.1")
+bazel_dep(name = "rules_kustomize", version = "0.5.3")
+
+# --- Ancillary infrastructure (not consumer-visible) ---------------------
+
+# Required by our stardoc targets and the test workspace. The resolved
+# version comes from the graph (currently 1.9.0 via rules_python 1.7.0).
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+
+# rules_python is used only to host the private image-rewriting helper
+# binary. Consumers are not expected to pull a Python toolchain themselves
+# just to use this ruleset; the binary runs under the hermetic interpreter
+# declared below.
+bazel_dep(name = "rules_python", version = "1.7.0")
+
+# --- Kustomize toolchain -------------------------------------------------
+#
+# The toolchain binary is registered here so that all manifest-rendering
+# rules in this repo (and any consuming repo) resolve kustomize from the
+# same pinned version.
+
+kustomize = use_extension(
+    "@rules_kustomize//kustomize:extensions.bzl",
+    "kustomize",
+)
+kustomize.download(version = "v5.8.0")
+use_repo(kustomize, "kustomize_tool", "kustomize_tool_toolchains")
+
+register_toolchains(
+    "@kustomize_tool_toolchains//:darwin_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:darwin_amd64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:linux_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:linux_amd64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:windows_arm64_v5.8.0_toolchain",
+    "@kustomize_tool_toolchains//:windows_amd64_v5.8.0_toolchain",
+)
+
+# --- Python toolchain (private use only) --------------------------------
+#
+# A single default Python 3.12 interpreter for hosting the py_binary
+# tools under lifecycle/private/. The generated toolchain is registered
+# so consumers do not need their own `rules_python` bootstrap just to
+# render manifests.
+
+python = use_extension(
+    "@rules_python//python/extensions:python.bzl",
+    "python",
+)
+python.toolchain(
+    is_default = True,
+    python_version = "3.12",
+)
+use_repo(python, "python_3_12", "python_3_12_host")
+
+register_toolchains("@python_3_12_host//:all")
+
+# --- Helm toolchain ------------------------------------------------------
+#
+# Registered on consumers' behalf with a pinned version, matching the
+# treatment of kustomize above. `helm_manifest` targets invoke
+# `@rules_helm//helm:defs.bzl%helm_template` under the hood; registering
+# the toolchain here means consumers can load `helm_manifest` without
+# first wiring `helm.toolchain(...)` + `register_toolchains(...)` in their
+# own MODULE.bazel.
+#
+# A consumer that needs a different helm version can register their own
+# `@rules_helm//helm:extensions.bzl%helm` toolchain earlier in their
+# MODULE.bazel; Bazel's toolchain resolution picks the first matching
+# registration.
+#
+# Bumping the helm version is a release-bearing change (see
+# docs/versioning.md — helm's template-function semantics affect rendered
+# chart output across minor versions).
+
+helm = use_extension("@rules_helm//helm:extensions.bzl", "helm")
+helm.toolchain(
+    name = "helm_toolchains",
+    version = "3.17.3",
+)
+use_repo(helm, "helm_toolchains")
+
+register_toolchains("@helm_toolchains//:all")

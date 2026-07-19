@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: svc-c-special
+  labels:
+    app: svc-c
+data:
+  key: special
