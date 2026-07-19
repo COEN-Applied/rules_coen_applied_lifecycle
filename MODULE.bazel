@@ -7,7 +7,7 @@ deliberate release-bearing change and MUST accompany an entry in CHANGELOG.md
 
 module(
     name = "rules_coen_applied_lifecycle",
-    version = "0.1.2",
+    version = "0.2.0",
 )
 
 # --- Pinned toolchains ---------------------------------------------------
